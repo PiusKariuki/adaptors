@@ -154,6 +154,18 @@ export function mGet(keys) {
   };
 }
 
+
+export function mSet(keysAndValues) {
+  return async state => {
+    const [resolvedKeysAndValues] = expandReferences(state, keysAndValues);
+
+    console.log(`Posting values for ${resolvedKeysAndValues}`);
+    await client.json.mSet(resolvedKeysAndValues, "$")
+
+    return state
+  }
+}
+
 /**
  * Get all fields and values of a hash, as an object, for a specified key.
  * @example <caption>Get the hash obejct at the noderedis:animals:1 key</caption>

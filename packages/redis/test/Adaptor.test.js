@@ -11,6 +11,7 @@ import {
   jGet,
   mGet,
   jSet,
+  mSet
 } from '../src';
 
 describe('get', () => {
@@ -496,6 +497,68 @@ describe('jGet', () => {
       age: '3',
     });
   });
+});
+
+describe('mSet', function(){
+  const mSetClient = {
+    json: {
+      mSet: async (keysAndValues, path) =>{
+        expect(keysAndValues).to.eql(['a', '{"name": "Alice"}', 'b', '{"name": "Bob"}']);
+        expect(path).to.eql('$');
+        return 'OK'
+      }
+    }
+  };
+
+  it('should expand references', async() =>{
+    setMockClient(mSetClient);
+    const state = {
+      keysAndValues: ['a', '{"name": "Alice"}', 'b', '{"name": "Bob"}']
+    }
+    await mSet(s => s.keysAndValues)(state);
+     })
+
+  it("should throw if keys and values are not specified", async() => {
+    const errorString = "Keys and values are required for mSet";
+    setMockClient({
+      json:{
+        mSet: async() =>{
+          throw new Error(errorString);
+        }
+      }
+    });
+
+    const state = {};
+    try {
+      await mSet()(state)
+    }catch (error) {
+      expect(error.message).to.eql(errorString)
+    }
+  });
+  
+  it("should if keys and values array length is not even", async () =>{
+    const errorString = "Keys and values array must have even length";
+    
+    setMockClient({
+      json: {
+        mSet: async () => {
+          throw new Error(errorString)
+        }
+      }
+    });
+    
+    const state = {
+      keysAndValues: ['a', '{"name": "Alice"}', '{"name": "Dan"}']
+    };
+    
+    try{
+      await mSet(s => s.keysAndValues)(state)
+    } catch (error) {
+      expect(error.message).to.eql(errorString)
+    }
+    
+  })
+  
 });
 
 describe('mGet', function () {
